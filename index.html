@@ -527,12 +527,12 @@
                             <div className="relative w-full max-w-[240px] lg:max-w-[85%] aspect-square mx-auto lg:mx-0">
                                 <div className="absolute inset-0 bg-brand-green border-4 border-black transform translate-x-3 translate-y-3 md:translate-x-4 md:translate-y-4 rounded-full"></div>
                                 <img
-                                    src="https://images.unsplash.com/photo-1613514785940-daed07799d9b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                                    src="https://scontent.fntr11-1.fna.fbcdn.net/v/t39.30808-6/468366600_1071899637966743_2297867704360862673_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHLnlH1FU5Kvh3d92yFeG5yf9KP_m1puqd_0o_-bWm6pzfvq_yho0agH_6XXYVDLM5d2Xe5txfFIoEPccxaYB8Y&_nc_ohc=w_ZYORGD4xQQ7kNvwGbHz3L&_nc_oc=AdkVEN5jnJ6BuRmMUvHtJGQFmXJfRzPIkWnTi_v0_pzpHEhd1PdIn7j-gWLsxZbgcxMk-Ty6L1V0nvzoqDy_cOty&_nc_zt=23&_nc_ht=scontent.fntr11-1.fna&_nc_gid=OEs6XFUgk8O95vxqRaM36w&oh=00_Afq5mtNqkKi3cZtH9OJ-TSQSaBH4ASTO3wXGSWFucM6TEg&oe=6962EE9D"
                                     alt="Tacos La Prietilla"
                                     className="relative w-full h-full object-cover rounded-full border-4 border-black transition-all duration-500 hover:scale-105 hover:rotate-2"
                                 />
                                 <div className="absolute -bottom-6 -right-2 lg:bottom-auto lg:top-0 lg:-right-4 bg-brand-yellow border-4 border-black p-3 md:p-4 rounded-full shadow-neo animate-bounce text-black z-20">
-                                    <span className="font-display text-lg md:text-2xl whitespace-nowrap">DESDE $35</span>
+                                    <span className="font-display text-lg md:text-2xl whitespace-nowrap">DESDE $90</span>
                                 </div>
                             </div>
                         </div>
@@ -550,7 +550,7 @@
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-black translate-x-2 translate-y-2 md:translate-x-3 md:translate-y-3 transition-transform group-hover:translate-x-5 group-hover:translate-y-5"></div>
                                 <img
-                                    src="https://images.unsplash.com/photo-1594488517208-e87f225e5058?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                                    src="https://t3.ftcdn.net/jpg/06/47/44/30/360_F_647443060_pxnL06Xhb7F0CsWdxmkmlzy375Bv1Odt.jpg"
                                     alt="Parrillada"
                                     className="relative w-full border-4 border-black"
                                 />
@@ -671,24 +671,27 @@
 
             return (
                 <section className="py-16 md:py-24 bg-brand-yellow border-y-4 border-black relative overflow-hidden">
-                    {/* Decoración de fondo (Patrones) */}
+                    {/* Decoración de fondo */}
                     <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"
                         style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 2px)', backgroundSize: '30px 30px' }}>
                     </div>
 
                     <div className="container mx-auto px-4 relative z-10 max-w-4xl">
-                        <SectionTitle title="Lo que dice la raza" subtitle="Historias Reales" />
+                        <div className="text-center mb-12">
+                            <h2 className="text-4xl font-display font-bold uppercase">Lo que dice la raza</h2>
+                            <p className="text-lg font-bold">Historias Reales</p>
+                        </div>
 
                         <div className="relative">
-                            {/* Tarjeta Principal del Slider */}
+                            {/* Quitamos el padding inferior exagerado (pb-24) porque ya no lo necesitamos */}
                             <div className="bg-white border-4 border-black p-8 md:p-12 shadow-neo-xl min-h-[300px] flex flex-col justify-center relative transition-all duration-300">
 
-                                {/* Comillas gigantes */}
-                                <div className="absolute -top-6 -left-2 md:-left-6 bg-brand-red border-4 border-black text-white font-display text-6xl px-4 py-2 shadow-neo transform -rotate-3">
+                                {/* Comillas */}
+                                <div className="absolute -top-6 -left-2 md:-left-6 bg-brand-red border-4 border-black text-white font-display text-6xl px-4 py-2 shadow-neo transform -rotate-3 z-10">
                                     "
                                 </div>
 
-                                {/* Contenido */}
+                                {/* Contenido Principal */}
                                 <div className="text-center animate-[float_0.5s_ease-out]" key={currentIndex}>
                                     {/* Estrellas */}
                                     <div className="flex justify-center gap-2 mb-6 text-brand-yellow">
@@ -702,33 +705,49 @@
                                         ))}
                                     </div>
 
+                                    {/* Comentario */}
                                     <p className="text-xl md:text-3xl font-display uppercase leading-tight mb-8 text-black">
                                         {currentReview.comment}
                                     </p>
 
-                                    <div className="inline-block border-t-4 border-black pt-4 px-8">
-                                        <h4 className="font-bold uppercase text-xl md:text-2xl">{currentReview.name}</h4>
-                                        <span className="text-sm font-bold bg-black text-white px-2 py-1 mt-1 inline-block transform rotate-2">
-                                            CLIENTE SATISFECHO
-                                        </span>
+                                    {/* --- NUEVO FOOTER DEL CARD (Flexbox) --- */}
+                                    <div className="flex items-end justify-between gap-4 mt-4 w-full relative z-20">
+
+                                        {/* Botón Anterior */}
+                                        <button
+                                            onClick={prevSlide}
+                                            className="bg-white border-4 border-black p-2 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all
+                                               /* En móvil es estático (parte del flujo), en desktop flota afuera */
+                                               relative md:absolute md:top-1/2 md:-left-12 md:-translate-y-1/2"
+                                        >
+                                            <Icon name="arrow-left" size={24} className="md:w-8 md:h-8" />
+                                        </button>
+
+                                        {/* Bloque del Nombre (Centrado) */}
+                                        <div className="flex-1 text-center">
+                                            {/* Flex-1 asegura que ocupe el espacio central */}
+                                            <div className="inline-block border-t-4 border-black pt-4 px-2 md:px-8">
+                                                <h4 className="font-bold uppercase text-lg md:text-2xl leading-none">{currentReview.name}</h4>
+                                                <span className="text-xs md:text-sm font-bold bg-black text-white px-2 py-1 mt-2 inline-block transform rotate-2">
+                                                    CLIENTE SATISFECHO
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Botón Siguiente */}
+                                        <button
+                                            onClick={nextSlide}
+                                            className="bg-white border-4 border-black p-2 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all
+                                               /* En móvil es estático, en desktop flota afuera */
+                                               relative md:absolute md:top-1/2 md:-right-12 md:-translate-y-1/2"
+                                        >
+                                            <Icon name="arrow-right" size={24} className="md:w-8 md:h-8" />
+                                        </button>
                                     </div>
+                                    {/* --- FIN FOOTER --- */}
+
                                 </div>
                             </div>
-
-                            {/* Controles (Flechas) */}
-                            <button
-                                onClick={prevSlide}
-                                className="absolute top-1/2 -left-4 md:-left-12 -translate-y-1/2 bg-white border-4 border-black p-3 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all z-20"
-                            >
-                                <Icon name="arrow-left" size={32} />
-                            </button>
-
-                            <button
-                                onClick={nextSlide}
-                                className="absolute top-1/2 -right-4 md:-right-12 -translate-y-1/2 bg-white border-4 border-black p-3 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all z-20"
-                            >
-                                <Icon name="arrow-right" size={32} />
-                            </button>
                         </div>
 
                         {/* Indicadores (Puntitos) */}
