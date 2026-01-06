@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Prietilla - Sabor del Norte</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#FF4D4D', // Rojo más vibrante/pop
+                            dark: '#000000', // Negro puro para bordes
+                            yellow: '#FFDE59', // Amarillo pop
+                            green: '#5DE2E7', // Turquesa retro para contrastes
+                            cream: '#FFF4E0', // Fondo crema cálido
+                            purple: '#9B5DE5' // Acento divertido
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Anton', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neo': '5px 5px 0px 0px #000000',
+                        'neo-lg': '8px 8px 0px 0px #000000',
+                        'neo-xl': '12px 12px 0px 0px #000000',
+                        'neo-sm': '3px 3px 0px 0px #000000',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #FFDE59;
+            border-left: 3px solid black;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #FF4D4D;
+            border: 3px solid black;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #000;
+        }
+
+        .text-outline {
+            -webkit-text-stroke: 2px black;
+            color: white;
+            text-shadow: 4px 4px 0px #000;
+        }
+
+        @media (max-width: 768px) {
+            .text-outline {
+                -webkit-text-stroke: 1px black;
+                text-shadow: 2px 2px 0px #000;
+            }
+        }
+
+        .text-outline-sm {
+            -webkit-text-stroke: 1px black;
+            color: transparent;
+        }
+
+        /* FIX: Pattern Background applied to pseudo-element instead of parent */
+        .bg-dots {
+            position: relative;
+            z-index: 0;
+        }
+
+        .bg-dots::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(#000 15%, transparent 16%), radial-gradient(#000 15%, transparent 16%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.05;
+            /* Opacity only affects the background pattern now */
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Ensure content sits above the background pattern */
+        .bg-dots>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-brand-cream text-brand-dark font-sans selection:bg-brand-dark selection:text-brand-yellow">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DATA ---
+        const MENU_CATEGORIES = ["Todos", "Tacos", "Snacks", "Burgers", "Bebidas"];
+
+        const MENU_ITEMS = [
+            // --- Productos Originales ---
+            {
+                id: 1,
+                name: "Tacos de Asada",
+                category: "Tacos",
+                price: 105,
+                description: "La clásica norteña. Carne asada al carbón en tortilla de harina o maíz. ¡Pídela con o sin queso!",
+                image: "https://scontent.fntr11-1.fna.fbcdn.net/v/t1.6435-9/208425674_295141038975944_8124767846580624725_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFWdHTcbpDMlTpfKmQHBHRBCmdbI6Rq4iMKZ1sjpGriI56_ZDhp8MmqMDWHwsnGzGQGVNr1_m-87e_k_axQTzNp&_nc_ohc=EfnNEBm-KpcQ7kNvwGJdiqk&_nc_oc=Adkjvb_HOMkEKfZRFymSpIZ3EIqEx_u8wmY44UXplQI43iWFCPTmb0ZvZll8LrHgafhGTvHghjaPJDMYNoPWbtv2&_nc_zt=23&_nc_ht=scontent.fntr11-1.fna&_nc_gid=3l0AIsfhEZMgm2CBKmlfBg&oh=00_AfpLduUqj7F1L7Uk4G4d6yGg2DCOnmqz9z-iV2qfs5EEXw&oe=6984ADA9",
+                options: ["Cebolla", "Cilantro", "Salsa", "Limón"]
+            },
+            {
+                id: 2,
+                name: "El Fácil Entra",
+                category: "Tacos",
+                price: 65,
+                description: "Para valientes: Jalapeño relleno de queso crema, envuelto en tocino sobre cama de carne asada.",
+                image: "https://scontent.fntr11-1.fna.fbcdn.net/v/t39.30808-6/468323688_1071260244697349_550565583607826095_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeF1hvBhDEScVAV5TlcshPM-CtHJbNgC4GwK0cls2ALgbKJ6fiM6SP9UTao3P90bcMu5-deyFXl5pelKyv15Dosm&_nc_ohc=2lLLqUWfhIUQ7kNvwFQ6urr&_nc_oc=AdmTUIP9qKqssP8mky6XLniAdijAzvZgzekxbRSxQAm-degvO0KI9LA7r1MG00qKh6XV195gAcc7qMN30HWma50q&_nc_zt=23&_nc_ht=scontent.fntr11-1.fna&_nc_gid=GvUm6gsg9eENSzZ3-jdz9w&oh=00_AfpQvQEPkfS5kUHe4ZRh7R44Un3UAFLDUJRLKlAuTMG0og&oe=6962F35B",
+                options: ["Cebolla", "Cilantro", "Salsa", "Limón"]
+            },
+            {
+                id: 3,
+                name: "Papitas Galeana",
+                category: "Snacks",
+                price: 55,
+                description: "Papas de galeana con chilito cambray. Pídelas solas, con queso o 'Especiales' con carne.",
+                image: "https://scontent.fntr11-1.fna.fbcdn.net/v/t39.30808-6/468345908_1072017327954974_91371017535932921_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeF85qLKdXjGajUrRqTWNNVOuKnX7itDfu-4qdfuK0N-7xPisZBPjAp9FNRvYOgTrmM1Ug08dZ3CaRb7sXBG4tzL&_nc_ohc=Hkg9dqpPbPsQ7kNvwH390i-&_nc_oc=AdlpROOViFpZ9Rg0C4i3HZjIOngxbnMUoiXW-ZyBsEbDUsUQBg2Wowy1b6JC1543iW7pwFco-SzD51jqKIMqHeJF&_nc_zt=23&_nc_ht=scontent.fntr11-1.fna&_nc_gid=rB8JgqDE4LyL4sRynq-Isg&oh=00_AfquopwhnqoXofmWqDYN4dgkU3-yts9IYsLtLAH3XGOxPw&oe=6962E561",
+                options: ["Salsa", "Limón", "Queso Extra"]
+            },
+            {
+                id: 4,
+                name: "La Clásica",
+                category: "Burgers",
+                price: 90,
+                description: "Carne de res jugosa, queso derretido y vegetales frescos. Simple y brutal.",
+                image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Tomate", "Lechuga", "Cebolla", "Pepinillos"]
+            },
+            {
+                id: 5,
+                name: "La Doble",
+                category: "Burgers",
+                price: 110,
+                description: "Doble carne de res jugosa, queso derretido y vegetales frescos. Doblemente brutal.",
+                image: "https://media.istockphoto.com/id/1188412964/es/foto/hamburguesa-con-queso-y-patatas-fritas.jpg?s=612x612&w=0&k=20&c=FaEH61wxBMYhFRu5nU9fVbbcum15OX-_tNdUuYd5iQQ=",
+                options: ["Tomate", "Lechuga", "Cebolla", "Pepinillos"]
+            },
+            {
+                id: 6,
+                name: "Boneless",
+                category: "Snacks",
+                price: 95,
+                description: "Trocitos de pechuga crujientes bañados en tu salsa favorita (Búfalo, BBQ o Mango Habanero).",
+                image: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Aderezo Ranch", "Apio", "Zanahoria"]
+            },
+            {
+                id: 10,
+                name: "Alitas",
+                category: "Snacks",
+                price: 95,
+                description: "Alitas de pollo doraditas bañadas en la salsa de tu elección. Ideales para compartir.",
+                image: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Salsa BBQ", "Salsa Buffalo", "Lemon Pepper", "Aderezo Ranch"]
+            },
+            {
+                id: 11,
+                name: "Hot Dog Especial",
+                category: "Snacks",
+                price: 55,
+                description: "Salchicha de pavo jumbo, envuelta en tocino, con tomate, cebolla asada y aderezos.",
+                image: "https://images.unsplash.com/photo-1612392062631-94dd858cba88?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Ketchup", "Mayonesa", "Mostaza", "Jalapeños"]
+            },
+            {
+                id: 12,
+                name: "Tostada de Asada",
+                category: "Snacks",
+                price: 45,
+                description: "Tortilla crujiente con frijoles refritos, nuestra carne asada, lechuga, tomate y crema.",
+                image: "https://scontent.fntr11-1.fna.fbcdn.net/v/t1.6435-9/197365720_280855283737853_8665016836984069385_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeGMCSlTYnldE9pHYQ281I2uDOXIMs_4qNMM5cgyz_io04eXRRCAsqwafQoiRq9a-Rrz9PNusApsoaYTXPQ-nied&_nc_ohc=zuAppr4BJ9kQ7kNvwFsdnyF&_nc_oc=AdkE2AJWL9tEemj09HsLleatn6QssgyVeechPX8Ch1nLaRDyQHV_2dBfrQdcCPzmm5LZ9OQO5vTh0aUfMVRNnymF&_nc_zt=23&_nc_ht=scontent.fntr11-1.fna&_nc_gid=6xd5zCWhOZqpLwqLrAJTow&oh=00_AfpWNEBvV55imxNA1_VeHV6ubJDDhQpYRcdamAYI7wUjzw&oe=6984B356",
+                options: ["Salsa Roja", "Salsa Verde", "Sin Verdura"]
+            },
+            {
+                id: 7,
+                name: "Papas a la Francesa",
+                category: "Snacks",
+                price: 45,
+                description: "Doraditas, crujientes y con el punto exacto de sal. El acompañante fiel.",
+                image: "https://puertofresco.com/cdn/shop/products/patatas-onduladas.jpg?v=1593107920",
+                options: ["Ketchup", "Queso Amarillo"]
+            },
+            {
+                id: 8,
+                name: "Aguas Naturales",
+                category: "Bebidas",
+                price: 30,
+                description: "100% fruta natural: Melón, Sandía, Limón o Naranja. Frescura total.",
+                image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Con Hielo", "Sin Hielo", "Poca Azúcar"]
+            },
+            {
+                id: 9,
+                name: "Refrescos",
+                category: "Bebidas",
+                price: 25,
+                description: "Coca-Cola, Zero, Fuze Tea o Agua Embotellada. Bien frías.",
+                image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                options: ["Con Hielo", "Sin Hielo"]
+            },
+        ];
+        const REVIEWS = [
+            { id: 1, name: "El Beto", comment: "No mamen, el taco 'Fácil Entra' es otro nivel, casi me da un infarto de lo bueno que está.", rating: 5 },
+            { id: 2, name: "La Lic. Paty", comment: "Le dije a mi nutrióloga que era ensalada... ensalada de carne asada. Perdóname Dios, pero está buenísimo.", rating: 5 }, // NUEVO
+            { id: 3, name: "El Chuy", comment: "La salsa roja me hizo ver a mis ancestros. Lloré, sudé y pedí otro. 10/10 volvería a sufrir.", rating: 5 }, // NUEVO
+            { id: 4, name: "Ana Sofía", comment: "Las papitas de galeana pican lo justo, excelente servicio.", rating: 5 },
+            { id: 5, name: "Mariana G.", comment: "Mi novio estaba enojado, le compré el fácil entra y se le olvidó por completo. Estos tacos salvan relaciones.", rating: 5 }, // NUEVO
+            { id: 6, name: "Don Pepe", comment: "Buen sabor al carbón, me recordó a las carnes asadas de mi rancho, recomendado.", rating: 5 },
+        ];
+
+        const LOCATIONS = [
+            {
+                id: 1,
+                name: "MATRIZ",
+                address: "Calle Apatzingan 228, Gpe. N.L.",
+                hours: "Mar-Dom: 6pm - 1am",
+                phone: "55-1234-5678",
+                color: "bg-brand-red",
+                mapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3595.44342736742!2d-100.2318226!3d25.689738499999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8662eb885526894f%3A0x7ba7a4faed8f5b1!2sLa%20Prietilla%20Tacos!5e0!3m2!1ses-419!2smx"
+            }
+        ];
+
+        const FAQS = [
+            { q: "¿Qué incluye 'El Fácil Entra'?", a: "Es una bomba: jalapeño relleno de queso crema, tocino y carne asada. ¡No apto para cardíacos!" },
+            { q: "¿Tienen servicio a domicilio?", a: "Sí, búscanos en las apps como 'La Prietilla', también puedes mandarnos un WhatsApp o llamarnos para pasar a recoger." },
+            { q: "¿Las papas Galeana pican mucho?", a: "Pican rico, traen chilito cambray. Si eres de buen diente, te van a encantar." },
+            { q: "¿Aceptan tarjeta?", a: "Claro, aceptamos efectivo, tarjeta y transferencias." }
+        ];
+
+        // --- ICONS ---
+        const Icon = ({ name, size = 24, className }) => {
+            const lucideRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} width={size} height={size} className={className}></i>;
+        };
+
+        // --- COMPONENTS ---
+
+        const Button = ({ children, onClick, className, variant = "primary" }) => {
+            const baseStyle = "px-6 py-3 font-bold border-4 border-black transition-all active:translate-y-1 active:shadow-none uppercase tracking-wider flex items-center gap-2 justify-center";
+            const variants = {
+                primary: "bg-brand-red text-white shadow-neo hover:bg-white hover:text-black",
+                secondary: "bg-brand-yellow text-black shadow-neo hover:bg-white",
+                dark: "bg-black text-white shadow-neo hover:bg-brand-green hover:text-black",
+                outline: "bg-white text-black shadow-neo hover:bg-brand-red hover:text-white"
+            };
+            return (
+                <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`}>
+                    {children}
+                </button>
+            );
+        };
+
+        const SectionTitle = ({ title, subtitle, align = "center" }) => (
+            <div className={`mb-12 md:mb-16 ${align === 'center' ? 'text-center' : 'text-left'} reveal`}>
+                <h3 className="text-lg md:text-xl font-bold uppercase tracking-widest mb-2 bg-brand-yellow inline-block px-2 border-2 border-black shadow-neo-sm transform -rotate-1">{subtitle}</h3>
+                <h2 className="text-4xl md:text-5xl lg:text-7xl font-display uppercase leading-[0.9] mt-2 md:mt-4 text-black">
+                    {title}
+                </h2>
+            </div>
+        );
+
+        const ProductModal = ({ product, onClose, onAdd }) => {
+            const [quantity, setQuantity] = useState(1);
+
+            // CAMBIO 1: Estado inicial vacío (todo desmarcado por defecto)
+            const [selectedOptions, setSelectedOptions] = useState({});
+
+            const [notes, setNotes] = useState("");
+
+            if (!product) return null;
+
+            const toggleOption = (option) => {
+                setSelectedOptions(prev => ({
+                    ...prev,
+                    [option]: !prev[option]
+                }));
+            };
+
+            const handleAdd = () => {
+                onAdd({
+                    ...product,
+                    quantity,
+                    selectedOptions,
+                    notes
+                });
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="bg-brand-cream border-4 border-black shadow-neo-xl w-full max-w-lg relative z-10 max-h-[90vh] overflow-y-auto animate-[float_0.3s_ease-out]">
+
+                        {/* Header con Imagen */}
+                        <div className="h-40 overflow-hidden border-b-4 border-black relative">
+                            <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
+                            <button onClick={onClose} className="absolute top-2 right-2 bg-white border-2 border-black p-1 hover:bg-brand-red hover:text-white transition-colors">
+                                <Icon name="x" size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-2">
+                                <h2 className="text-3xl font-display uppercase leading-none">{product.name}</h2>
+                                <span className="text-2xl font-bold text-brand-red">${product.price}</span>
+                            </div>
+                            <p className="text-gray-600 mb-6 font-medium text-sm leading-tight">{product.description}</p>
+
+                            {/* Quantity */}
+                            <div className="mb-6">
+                                <label className="block font-bold uppercase text-sm mb-2">¿Cuántos?</label>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        className="w-12 h-12 bg-white border-4 border-black font-bold text-2xl shadow-neo-sm hover:translate-y-1 hover:shadow-none flex items-center justify-center active:bg-gray-200"
+                                    >-</button>
+                                    <span className="text-3xl font-display w-12 text-center">{quantity}</span>
+                                    <button
+                                        onClick={() => setQuantity(quantity + 1)}
+                                        className="w-12 h-12 bg-brand-yellow border-4 border-black font-bold text-2xl shadow-neo-sm hover:translate-y-1 hover:shadow-none flex items-center justify-center active:bg-yellow-500"
+                                    >+</button>
+                                </div>
+                            </div>
+
+                            {/* CAMBIO 2: Opciones con Checkmark Visual */}
+                            {product.options && product.options.length > 0 && (
+                                <div className="mb-6">
+                                    <label className="block font-bold uppercase text-sm mb-2">¿Con todo?</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {product.options.map(opt => {
+                                            const isSelected = selectedOptions[opt];
+                                            return (
+                                                <button
+                                                    key={opt}
+                                                    onClick={() => toggleOption(opt)}
+                                                    className={`p-2 border-4 border-black font-bold text-sm uppercase transition-all flex items-center gap-3
+                ${isSelected
+                                                            ? 'bg-brand-green shadow-neo-sm text-black'
+                                                            : 'bg-white text-gray-400 hover:bg-gray-50'}`}
+                                                >
+                                                    <div className={`w-6 h-6 border-2 border-black flex items-center justify-center transition-colors ${isSelected ? 'bg-black text-white' : 'bg-white'}`}>
+                                                        <div className={isSelected ? 'opacity-100' : 'opacity-0'}>
+                                                            <Icon name="check" size={16} />
+                                                        </div>
+                                                    </div>
+
+                                                    {opt}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notes / Allergies */}
+                            <div className="mb-8">
+                                <label className="block font-bold uppercase text-sm mb-2">Alergias / Notas</label>
+                                <textarea
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    className="w-full bg-white border-4 border-black p-3 font-bold text-sm focus:outline-none focus:bg-yellow-50 focus:border-brand-red transition-colors"
+                                    placeholder="Ej. Sin cebolla, Salsa aparte..."
+                                    rows="2"
+                                ></textarea>
+                            </div>
+
+                            <Button onClick={handleAdd} className="w-full text-lg py-4">
+                                AGREGAR AL CARRITO - ${(product.price * quantity)}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Navbar = ({ cartCount, onOpenCart }) => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            return (
+                <nav className="fixed w-full z-50 top-0 left-0 bg-brand-cream border-b-4 border-black py-3 md:py-4">
+                    <div className="container mx-auto px-4 flex justify-between items-center">
+                        <a href="#" className="flex items-center gap-2 group">
+                            <span className="text-2xl md:text-3xl lg:text-4xl font-display tracking-tighter uppercase group-hover:text-brand-red transition-colors text-black">
+                                La<span className="text-brand-red group-hover:text-black">Prietilla</span>
+                            </span>
+                        </a>
+
+                        {/* Desktop Menu */}
+                        <div className="hidden lg:flex items-center gap-6 font-bold uppercase tracking-wide text-sm text-black">
+                            <a href="#menu" className="hover:underline decoration-4 decoration-brand-red underline-offset-4">Menú</a>
+                            <a href="#sucursales" className="hover:underline decoration-4 decoration-brand-green underline-offset-4">Sucursales</a>
+                            <a href="#faq" className="hover:underline decoration-4 decoration-brand-purple underline-offset-4">FAQ</a>
+                            <a href="#contacto" className="hover:underline decoration-4 decoration-brand-yellow underline-offset-4">Contacto</a>
+                            <button
+                                onClick={onOpenCart}
+                                className="bg-brand-dark text-white px-5 py-2 border-2 border-black shadow-[4px_4px_0px_0px_#FFDE59] hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
+                            >
+                                <Icon name="shopping-bag" size={18} />
+                                <span>({cartCount})</span>
+                            </button>
+                        </div>
+
+                        {/* Mobile Menu Button - Visible on Tablet/Mobile */}
+                        <div className="flex items-center gap-4 lg:hidden">
+                            <button
+                                onClick={onOpenCart}
+                                className="bg-brand-dark text-white px-3 py-2 border-2 border-black shadow-neo-sm flex items-center gap-2"
+                            >
+                                <Icon name="shopping-bag" size={18} />
+                                <span className="text-sm">({cartCount})</span>
+                            </button>
+                            <button className="p-2 border-2 border-black bg-brand-yellow shadow-neo-sm text-black" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                                <Icon name={isMenuOpen ? "x" : "menu"} size={24} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Mobile Menu */}
+                    {isMenuOpen && (
+                        <div className="absolute top-full left-0 w-full bg-brand-dark border-b-4 border-black p-6 flex flex-col gap-4 z-50 shadow-2xl">
+                            <a href="#menu" onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-display hover:text-brand-yellow">MENÚ</a>
+                            <a href="#sucursales" onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-display hover:text-brand-green">SUCURSALES</a>
+                            <a href="#faq" onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-display hover:text-brand-purple">FAQ</a>
+                            <a href="#contacto" onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-display hover:text-brand-red">CONTACTO</a>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        const Hero = () => {
+            return (
+                <section id="inicio" className="min-h-screen pt-28 pb-12 flex items-center relative overflow-hidden bg-brand-cream bg-dots">
+                    <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+                        <div className="relative z-10 order-2 lg:order-1 lg:-mt-16 reveal">
+                            <div className="inline-block bg-brand-red border-4 border-black px-3 py-1 md:px-4 md:py-2 font-black text-white text-lg md:text-xl mb-4 md:mb-6 shadow-neo transform -rotate-2">
+                                ¡SABOR DEL NORTE!
+                            </div>
+                            <h1 className="text-6xl md:text-8xl lg:text-9xl font-display leading-[0.85] mb-6 md:mb-8 text-outline break-words">
+                                CARNE <span className="text-brand-yellow text-shadow-none drop-shadow-[3px_3px_0_rgba(0,0,0,1)] md:drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">ASADA</span><br />
+                                DE VERDAD
+                            </h1>
+                            <p className="text-lg md:text-xl font-medium mb-8 md:mb-10 max-w-md leading-relaxed border-l-4 border-black pl-4 text-black">
+                                Aquí se viene a comer bien. Tacos, papitas, boneless y el famoso 'Fácil Entra'.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <Button className="text-lg md:text-xl py-3 md:py-4 px-6 md:px-8" onClick={() => document.getElementById('menu').scrollIntoView()}>
+                                    ¡VER EL MENÚ!
+                                </Button>
+                                <a href="#sucursales" className="px-6 md:px-8 py-3 md:py-4 font-bold border-4 border-black bg-white text-black shadow-neo hover:bg-brand-green transition-all uppercase flex items-center justify-center gap-2 text-lg">
+                                    <Icon name="map-pin" /> Ver Ubicaciones
+                                </a>
+                            </div>
+                        </div>
+
+                        <div className="relative order-1 lg:order-2 flex justify-center lg:block reveal">
+                            <div className="relative w-full max-w-[240px] lg:max-w-[85%] aspect-square mx-auto lg:mx-0">
+                                <div className="absolute inset-0 bg-brand-green border-4 border-black transform translate-x-3 translate-y-3 md:translate-x-4 md:translate-y-4 rounded-full"></div>
+                                <img
+                                    src="https://images.unsplash.com/photo-1613514785940-daed07799d9b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                                    alt="Tacos La Prietilla"
+                                    className="relative w-full h-full object-cover rounded-full border-4 border-black transition-all duration-500 hover:scale-105 hover:rotate-2"
+                                />
+                                <div className="absolute -bottom-6 -right-2 lg:bottom-auto lg:top-0 lg:-right-4 bg-brand-yellow border-4 border-black p-3 md:p-4 rounded-full shadow-neo animate-bounce text-black z-20">
+                                    <span className="font-display text-lg md:text-2xl whitespace-nowrap">DESDE $35</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const About = () => {
+            return (
+                <section className="py-16 md:py-20 bg-brand-red border-y-4 border-black relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none"></div>
+                    <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative z-10">
+                        <div className="w-full md:w-1/2 reveal">
+                            <div className="relative group">
+                                <div className="absolute inset-0 bg-black translate-x-2 translate-y-2 md:translate-x-3 md:translate-y-3 transition-transform group-hover:translate-x-5 group-hover:translate-y-5"></div>
+                                <img
+                                    src="https://images.unsplash.com/photo-1594488517208-e87f225e5058?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                                    alt="Parrillada"
+                                    className="relative w-full border-4 border-black"
+                                />
+                            </div>
+                        </div>
+                        <div className="w-full md:w-1/2 text-white mt-8 md:mt-0 reveal">
+                            <h3 className="text-xl md:text-2xl font-bold bg-black inline-block px-2 transform rotate-1 mb-4">LA PRIETILLA</h3>
+                            <h2 className="text-5xl md:text-6xl font-display mb-6 leading-none">AQUÍ NO SE JUEGA<br />CON EL <span className="text-brand-yellow">HAMBRE</span></h2>
+                            <p className="text-base md:text-lg font-medium border-l-4 border-white pl-4 md:pl-6 mb-8">
+                                Nacimos en el norte, donde la carne asada es religión. En "La Prietilla" no servimos micro-porciones gourmet. Servimos sabor, carbón y tortillas calientitas. Si vienes con hambre, llegaste al lugar correcto.
+                            </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white text-black p-3 md:p-4 border-4 border-black shadow-[4px_4px_0px_0px_#000]">
+                                    <Icon name="flame" className="text-brand-red mb-2" />
+                                    <h4 className="font-bold uppercase text-sm md:text-base">Puro Carbón</h4>
+                                </div>
+                                <div className="bg-brand-yellow text-black p-3 md:p-4 border-4 border-black shadow-[4px_4px_0px_0px_#000]">
+                                    <Icon name="heart" className="text-black mb-2" />
+                                    <h4 className="font-bold uppercase text-sm md:text-base">Hecho con Ganas</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Menu = ({ onProductSelect }) => {
+            const [filter, setFilter] = useState("Todos");
+            const filteredItems = filter === "Todos" ? MENU_ITEMS : MENU_ITEMS.filter(item => item.category === filter);
+            // Este efecto se ejecuta cada vez que cambia el 'filter'
+            useEffect(() => {
+                // Pequeña pausa para asegurar que React ya pintó los nuevos elementos
+                const timer = setTimeout(() => {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('active');
+                            }
+                        });
+                    }, { threshold: 0.1 });
+
+                    // Buscamos solo los elementos dentro del menú
+                    const menuItems = document.querySelectorAll('#menu .reveal');
+                    menuItems.forEach(el => observer.observe(el));
+
+                    // Limpieza (desconectar observador anterior si cambia rápido)
+                    return () => observer.disconnect();
+                }, 100);
+
+                return () => clearTimeout(timer);
+            }, [filter]); // <- Importante: esto hace que se ejecute al cambiar el filtro
+            return (
+                <section id="menu" className="py-16 md:py-24 bg-brand-cream bg-dots">
+                    <div className="container mx-auto px-4">
+                        <SectionTitle title="El Menú" subtitle="¿Qué se te antoja?" />
+
+                        {/* Filters */}
+                        <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-12 md:mb-16 reveal">
+                            {MENU_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFilter(cat)}
+                                    className={`px-6 py-2 md:px-8 md:py-3 font-bold uppercase tracking-wider transition-all border-4 border-black shadow-neo-sm active:translate-y-1 active:shadow-none text-sm md:text-base
+                                        ${filter === cat
+                                            ? 'bg-black text-white'
+                                            : 'bg-white text-black hover:bg-brand-yellow'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12">
+                            {filteredItems.map(item => (
+                                <div key={item.id} className="group relative bg-white border-4 border-black shadow-neo hover:shadow-neo-lg hover:-translate-y-2 transition-all duration-300 reveal">
+                                    <div className="h-48 md:h-56 overflow-hidden border-b-4 border-black relative">
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110" />
+                                        <div className="absolute top-2 right-2 bg-brand-yellow border-2 border-black px-3 py-1 font-black text-lg shadow-neo-sm transform rotate-3 text-black">
+                                            ${item.price}
+                                        </div>
+                                    </div>
+                                    <div className="p-4 md:p-5">
+                                        <h4 className="text-2xl md:text-3xl font-display uppercase mb-2 leading-none text-black">{item.name}</h4>
+                                        <p className="text-xs md:text-sm font-medium text-gray-600 mb-4 md:mb-6 leading-tight min-h-[40px]">{item.description}</p>
+                                        <Button onClick={() => onProductSelect(item)} variant="dark" className="w-full text-sm py-2">
+                                            AGREGAR <Icon name="plus" size={16} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        const Testimonials = () => {
+            const [currentIndex, setCurrentIndex] = useState(0);
+
+            // Auto-play: Cambia cada 5 segundos
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    nextSlide();
+                }, 5000);
+                return () => clearInterval(interval);
+            }, [currentIndex]);
+
+            const nextSlide = () => {
+                setCurrentIndex((prev) => (prev === REVIEWS.length - 1 ? 0 : prev + 1));
+            };
+
+            const prevSlide = () => {
+                setCurrentIndex((prev) => (prev === 0 ? REVIEWS.length - 1 : prev - 1));
+            };
+
+            const currentReview = REVIEWS[currentIndex];
+
+            return (
+                <section className="py-16 md:py-24 bg-brand-yellow border-y-4 border-black relative overflow-hidden">
+                    {/* Decoración de fondo (Patrones) */}
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"
+                        style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 2px)', backgroundSize: '30px 30px' }}>
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10 max-w-4xl">
+                        <SectionTitle title="Lo que dice la raza" subtitle="Historias Reales" />
+
+                        <div className="relative">
+                            {/* Tarjeta Principal del Slider */}
+                            <div className="bg-white border-4 border-black p-8 md:p-12 shadow-neo-xl min-h-[300px] flex flex-col justify-center relative transition-all duration-300">
+
+                                {/* Comillas gigantes */}
+                                <div className="absolute -top-6 -left-2 md:-left-6 bg-brand-red border-4 border-black text-white font-display text-6xl px-4 py-2 shadow-neo transform -rotate-3">
+                                    "
+                                </div>
+
+                                {/* Contenido */}
+                                <div className="text-center animate-[float_0.5s_ease-out]" key={currentIndex}>
+                                    {/* Estrellas */}
+                                    <div className="flex justify-center gap-2 mb-6 text-brand-yellow">
+                                        {[...Array(5)].map((_, idx) => (
+                                            <Icon
+                                                key={idx}
+                                                name="star"
+                                                className={`drop-shadow-[2px_2px_0_rgba(0,0,0,1)] ${idx < currentReview.rating ? "fill-brand-yellow text-black" : "text-gray-300"}`}
+                                                size={32}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <p className="text-xl md:text-3xl font-display uppercase leading-tight mb-8 text-black">
+                                        {currentReview.comment}
+                                    </p>
+
+                                    <div className="inline-block border-t-4 border-black pt-4 px-8">
+                                        <h4 className="font-bold uppercase text-xl md:text-2xl">{currentReview.name}</h4>
+                                        <span className="text-sm font-bold bg-black text-white px-2 py-1 mt-1 inline-block transform rotate-2">
+                                            CLIENTE SATISFECHO
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Controles (Flechas) */}
+                            <button
+                                onClick={prevSlide}
+                                className="absolute top-1/2 -left-4 md:-left-12 -translate-y-1/2 bg-white border-4 border-black p-3 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all z-20"
+                            >
+                                <Icon name="arrow-left" size={32} />
+                            </button>
+
+                            <button
+                                onClick={nextSlide}
+                                className="absolute top-1/2 -right-4 md:-right-12 -translate-y-1/2 bg-white border-4 border-black p-3 shadow-neo hover:bg-brand-dark hover:text-white hover:shadow-none hover:translate-y-1 transition-all z-20"
+                            >
+                                <Icon name="arrow-right" size={32} />
+                            </button>
+                        </div>
+
+                        {/* Indicadores (Puntitos) */}
+                        <div className="flex justify-center gap-3 mt-8">
+                            {REVIEWS.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentIndex(idx)}
+                                    className={`w-4 h-4 border-2 border-black transition-all ${idx === currentIndex ? 'bg-black scale-125' : 'bg-white hover:bg-gray-200'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        const Locations = () => {
+            return (
+                <section id="sucursales" className="py-16 md:py-24 bg-brand-green border-y-4 border-black">
+                    <div className="container mx-auto px-4">
+                        <SectionTitle title="Dónde Estamos" subtitle="Cáele a comer" />
+
+                        {/* Cambiamos el grid para centrar una sola tarjeta */}
+                        <div className="flex justify-center">
+                            {LOCATIONS.map(loc => (
+                                // Agregamos 'w-full max-w-4xl' para que la tarjeta sea más ancha y luzca el mapa
+                                <div key={loc.id} className={`w-full max-w-4xl relative p-6 md:p-8 border-4 border-black bg-white shadow-neo-xl reveal`}>
+
+                                    {/* Cinta adhesiva decorativa */}
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/20 rotate-1"></div>
+
+                                    <div className="flex flex-col md:flex-row gap-8">
+                                        {/* Columna Izquierda: Información */}
+                                        <div className="w-full md:w-1/3">
+                                            <div className={`inline-block px-3 py-1 border-2 border-black font-bold text-sm mb-4 ${loc.color} text-white`}>
+                                                SUCURSAL PRINCIPAL
+                                            </div>
+
+                                            <h3 className="text-3xl md:text-5xl font-display uppercase mb-6 text-black leading-none">{loc.name}</h3>
+
+                                            <div className="space-y-4 font-bold text-black text-base">
+                                                <div className="flex items-start gap-3">
+                                                    <Icon name="map-pin" className="shrink-0 text-brand-red" />
+                                                    <p>{loc.address}</p>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <Icon name="clock" className="shrink-0 text-brand-red" />
+                                                    <p>{loc.hours}</p>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <Icon name="phone" className="shrink-0 text-brand-red" />
+                                                    <p>{loc.phone}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-6">
+                                                <Button onClick={() => window.open(`https://maps.google.com?q=${loc.address}`)} className="w-full text-sm">
+                                                    VER EN APP <Icon name="external-link" size={16} />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Columna Derecha: El Mapa */}
+                                        <div className="w-full md:w-2/3 h-64 md:h-auto min-h-[300px] border-4 border-black bg-gray-100 shadow-neo-sm relative">
+                                            <iframe
+                                                src={loc.mapEmbed}
+                                                width="100%"
+                                                height="100%"
+                                                style={{ border: 0 }}
+                                                allowFullScreen=""
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer-when-downgrade"
+                                                className="absolute inset-0 w-full h-full"
+                                            ></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const FAQ = () => {
+            const [openIndex, setOpenIndex] = useState(null);
+
+            return (
+                <section id="faq" className="py-16 md:py-24 bg-brand-cream bg-dots">
+                    <div className="container mx-auto px-4 max-w-3xl">
+                        <SectionTitle title="Dudas Existenciales" subtitle="FAQ" />
+
+                        <div className="space-y-4 md:space-y-6">
+                            {FAQS.map((faq, idx) => (
+                                <div key={idx} className="border-4 border-black bg-white shadow-neo transition-all reveal">
+                                    <button
+                                        onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                                        className="w-full flex justify-between items-center p-4 md:p-6 text-left hover:bg-brand-yellow transition-colors text-black"
+                                    >
+                                        <span className="text-lg md:text-xl font-bold uppercase pr-4 md:pr-8">{faq.q}</span>
+                                        <Icon name={openIndex === idx ? "minus" : "plus"} className="border-2 border-black rounded-full p-1 w-6 h-6 md:w-8 md:h-8 shrink-0" />
+                                    </button>
+                                    {openIndex === idx && (
+                                        <div className="p-4 md:p-6 pt-0 text-base md:text-lg border-t-4 border-black bg-brand-yellow text-black">
+                                            <p className="font-medium">{faq.a}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Contact = () => {
+            return (
+                <section id="contacto" className="py-16 md:py-24 bg-black text-white relative">
+                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                        <div className="w-96 h-96 bg-brand-red rounded-full blur-3xl absolute -top-20 -left-20"></div>
+                        <div className="w-96 h-96 bg-brand-blue rounded-full blur-3xl absolute bottom-0 right-0"></div>
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10">
+                        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+                            <div className="mb-8 md:mb-0 reveal">
+                                <h2 className="text-5xl md:text-8xl font-display uppercase leading-none mb-6">
+                                    ¿Hablamos?<br />
+                                    <span className="text-transparent text-stroke stroke-white" style={{ WebkitTextStroke: "2px white" }}>Mándanos</span><br />
+                                    <span className="text-brand-yellow">Un mensaje</span>
+                                </h2>
+                                <p className="text-lg md:text-xl mb-8 border-l-4 border-brand-red pl-6">
+                                    Ya sea para felicitarnos, quejarte (esperemos que no) o pedir cotización para tu fiesta.
+                                </p>
+                                <div className="space-y-4">
+                                    <a href="mailto:hola@laprietilla.com" className="flex items-center gap-4 text-xl md:text-2xl hover:text-brand-red transition-colors font-bold break-all">
+                                        <Icon name="mail" /> hola@laprietilla.com
+                                    </a>
+                                    <a href="tel:5512345678" className="flex items-center gap-4 text-xl md:text-2xl hover:text-brand-green transition-colors font-bold">
+                                        <Icon name="phone" /> 55-1234-5678
+                                    </a>
+                                </div>
+                            </div>
+
+                            <form className="bg-white p-6 md:p-8 border-4 border-brand-cream shadow-[8px_8px_0px_0px_#FF4D4D] md:shadow-[12px_12px_0px_0px_#FF4D4D] text-black reveal">
+                                <div className="space-y-4 md:space-y-6">
+                                    <div>
+                                        <label className="block font-bold uppercase text-sm mb-2">Tu Nombre</label>
+                                        <input type="text" className="w-full bg-gray-100 border-4 border-black p-3 font-bold focus:outline-none focus:bg-brand-yellow focus:border-black transition-colors" placeholder="JUAN PÉREZ" />
+                                    </div>
+                                    <div>
+                                        <label className="block font-bold uppercase text-sm mb-2">Tu Correo</label>
+                                        <input type="email" className="w-full bg-gray-100 border-4 border-black p-3 font-bold focus:outline-none focus:bg-brand-yellow focus:border-black transition-colors" placeholder="JUAN@EJEMPLO.COM" />
+                                    </div>
+                                    <div>
+                                        <label className="block font-bold uppercase text-sm mb-2">Mensaje</label>
+                                        <textarea rows="4" className="w-full bg-gray-100 border-4 border-black p-3 font-bold focus:outline-none focus:bg-brand-yellow focus:border-black transition-colors" placeholder="¿QUÉ ONDA?"></textarea>
+                                    </div>
+                                    <button type="button" className="w-full bg-black text-white font-bold py-3 md:py-4 text-lg md:text-xl border-4 border-transparent hover:bg-brand-red hover:border-black hover:text-white hover:shadow-neo transition-all uppercase tracking-widest">
+                                        Enviar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Footer = () => {
+            // Definimos los datos de las redes aquí para mantener el JSX limpio
+            const socialLinks = [
+                {
+                    name: 'instagram',
+                    url: 'https://www.instagram.com/laprietillatacos/'
+                },
+                {
+                    name: 'facebook',
+                    url: 'https://www.facebook.com/laprietillatacos/'
+                },
+                {
+                    name: 'twitter',
+                    url: 'https://twitter.com/'
+                }
+            ];
+
+            return (
+                <footer className="bg-brand-yellow border-t-4 border-black pt-12 md:pt-16 pb-8">
+                    <div className="container mx-auto px-4 text-center">
+                        <h2 className="text-[15vw] md:text-[12vw] font-display leading-none opacity-10 select-none pointer-events-none text-black">
+                            LAPRIETILLA
+                        </h2>
+
+                        <div className="flex justify-center gap-6 md:gap-8 -mt-6 md:-mt-16 mb-8 md:mb-12 relative z-10">
+                            {socialLinks.map((social) => (
+                                <a
+                                    key={social.name}
+                                    href={social.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer" // Importante por seguridad al usar target="_blank"
+                                    className="w-12 h-12 md:w-16 md:h-16 bg-white border-4 border-black flex items-center justify-center shadow-neo hover:translate-y-1 hover:shadow-none transition-all hover:bg-black hover:text-white text-black"
+                                >
+                                    {/* Pasamos social.name al componente Icon */}
+                                    <Icon name={social.name} size={20} className="md:w-7 md:h-7" />
+                                </a>
+                            ))}
+                        </div>
+
+                        <p className="font-bold uppercase tracking-widest text-xs md:text-sm text-black px-4">
+                            &copy; 2025 La Prietilla. Made by Somosmada.
+                        </p>
+                    </div>
+                </footer>
+            );
+        };
+
+        const Cart = ({ isOpen, onClose, cartItems, removeFromCart, updateQuantity }) => {
+            const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+            // --- 1. AQUÍ AGREGAS LA FUNCIÓN DE WHATSAPP ---
+            const handleWhatsAppCheckout = () => {
+                if (cartItems.length === 0) return;
+
+                // IMPORTANTE: Pon aquí tu número real con código de país (ej. 521 para México)
+                const phoneNumber = "5215512345678";
+
+                // Construimos el mensaje de texto
+                let message = "Hola La Prietilla, quiero hacer un pedido:%0A%0A"; // %0A es un enter
+
+                cartItems.forEach((item) => {
+                    // Producto y precio
+                    message += `🌮 *${item.quantity}x ${item.name}* - $${item.price * item.quantity}%0A`;
+
+                    // Opciones (si tiene)
+                    const options = Object.entries(item.selectedOptions || {})
+                        .filter(([_, active]) => active)
+                        .map(([opt]) => opt)
+                        .join(", ");
+
+                    if (options) message += `   + Extras: ${options}%0A`;
+                    if (item.notes) message += `   + Nota: ${item.notes}%0A`;
+
+                    message += "%0A"; // Espacio entre items
+                });
+
+                message += `*TOTAL A PAGAR: $${total}*%0A%0A`;
+                message += "¿Cuál es el tiempo de espera?";
+
+                // Abrimos WhatsApp
+                window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+            };
+            // ----------------------------------------------
+
+            return (
+                <>
+                    <div
+                        className={`fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                        onClick={onClose}
+                    ></div>
+
+                    <div className={`fixed top-0 right-0 w-full md:w-[500px] h-full bg-brand-cream border-l-4 border-black z-[70] transform transition-transform duration-300 shadow-2xl flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                        <div className="p-4 md:p-6 bg-brand-yellow border-b-4 border-black flex justify-between items-center text-black">
+                            <h2 className="text-2xl md:text-3xl font-display uppercase">Tu Orden</h2>
+                            <button onClick={onClose} className="bg-white border-2 border-black p-1 hover:bg-red-500 hover:text-white transition-colors">
+                                <Icon name="x" size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+                            {cartItems.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center opacity-50 text-black">
+                                    <Icon name="shopping-cart" size={64} className="mb-4" />
+                                    <p className="text-xl md:text-2xl font-display uppercase">Nada por aquí</p>
+                                </div>
+                            ) : (
+                                cartItems.map((item, index) => (
+                                    <div key={index} className="flex gap-3 md:gap-4 items-start bg-white p-3 md:p-4 border-4 border-black shadow-neo-sm text-black">
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-display text-lg md:text-xl uppercase leading-none">{item.name}</h4>
+                                                <p className="font-bold text-brand-red">${item.price * item.quantity}</p>
+                                            </div>
+
+                                            <div className="text-xs text-gray-500 font-medium space-y-1 mb-2">
+                                                {item.selectedOptions && (
+                                                    <p>
+                                                        {Object.entries(item.selectedOptions)
+                                                            .filter(([_, active]) => active)
+                                                            .map(([opt]) => opt)
+                                                            .join(", ") || "Sin extras"}
+                                                    </p>
+                                                )}
+                                                {item.notes && (
+                                                    <p className="text-brand-red bg-yellow-50 px-1 inline-block border border-red-100">
+                                                        Nota: {item.notes}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center border-2 border-black bg-gray-100">
+                                                    <button onClick={() => updateQuantity(index, -1)} className="px-2 py-1 hover:bg-black hover:text-white transition-colors">-</button>
+                                                    <span className="w-6 md:w-8 text-center font-bold">{item.quantity}</span>
+                                                    <button onClick={() => updateQuantity(index, 1)} className="px-2 py-1 hover:bg-black hover:text-white transition-colors">+</button>
+                                                </div>
+                                                <button onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-brand-red text-xs underline font-bold uppercase">
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {cartItems.length > 0 && (
+                            <div className="p-4 md:p-6 bg-white border-t-4 border-black text-black">
+                                <div className="flex justify-between items-center mb-6 text-xl md:text-2xl font-display uppercase">
+                                    <span>Total</span>
+                                    <span>${total}</span>
+                                </div>
+                                {/* --- 2. AQUÍ ACTUALIZAS EL BOTÓN PARA USAR LA FUNCIÓN --- */}
+                                <Button
+                                    className="w-full text-lg md:text-xl py-3 md:py-4 bg-green-500 hover:bg-green-600 border-green-700 text-white"
+                                    onClick={handleWhatsAppCheckout}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Icon name="message-circle" size={24} />
+                                        PEDIR POR WHATSAPP
+                                    </div>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </>
+            );
+        };
+
+        const App = () => {
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [notification, setNotification] = useState(null);
+            const [selectedProduct, setSelectedProduct] = useState(null);
+
+            // Setup Scroll Animation Observer
+            useEffect(() => {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+                // Also init icons
+                if (window.lucide) window.lucide.createIcons();
+            }, []);
+
+            const addToCart = (productWithDetails) => {
+                setCart(prevCart => [...prevCart, productWithDetails]);
+                setNotification(`${productWithDetails.name} agregado`);
+                setTimeout(() => setNotification(null), 2000);
+            };
+
+            const removeFromCart = (index) => {
+                setCart(prevCart => prevCart.filter((_, i) => i !== index));
+            };
+
+            const updateQuantity = (index, change) => {
+                setCart(prevCart => prevCart.map((item, i) => {
+                    if (i === index) {
+                        const newQ = item.quantity + change;
+                        return newQ > 0 ? { ...item, quantity: newQ } : item;
+                    }
+                    return item;
+                }));
+            };
+
+            const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+            return (
+                <div className="antialiased">
+                    <Navbar cartCount={cartCount} onOpenCart={() => setIsCartOpen(true)} />
+                    <Hero />
+                    <About />
+                    <Menu onProductSelect={setSelectedProduct} />
+                    <Testimonials />
+                    <Locations />
+                    <FAQ />
+                    <Contact />
+                    <Footer />
+
+                    <Cart
+                        isOpen={isCartOpen}
+                        onClose={() => setIsCartOpen(false)}
+                        cartItems={cart}
+                        removeFromCart={removeFromCart}
+                        updateQuantity={updateQuantity}
+                    />
+
+                    {selectedProduct && (
+                        <ProductModal
+                            product={selectedProduct}
+                            onClose={() => setSelectedProduct(null)}
+                            onAdd={addToCart}
+                        />
+                    )}
+
+                    {/* Toast */}
+                    <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${notification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+                        <div className="bg-black text-white px-6 md:px-8 py-3 md:py-4 border-4 border-brand-yellow shadow-neo font-bold uppercase flex items-center gap-3 text-sm md:text-base whitespace-nowrap">
+                            <Icon name="check-circle" className="text-brand-yellow" size={20} />
+                            {notification}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
